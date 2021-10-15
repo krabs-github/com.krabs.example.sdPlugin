@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>com.krabs.test PI</title>
+    <link rel="stylesheet" href="resources/scripts/sdpi.css">
+    <script src="resources/scripts/sdtools.common.js"></script>
+    <link rel="stylesheet" href="resources/scripts/rangeTooltip.css">
+    <script src="resources/scripts/rangeTooltip.js"></script>
+
+</head>
+
+<body>
+  <div class="sdpi-wrapper">
+    <div class="sdpi-heading"></div>
+    <div class="sdpi-item" id="id="required_text"">
+        <div class="sdpi-item-label">Test Name</div>
+        <input class="sdProperty" type="text" id="vKrabs_TestName" value="" required oninput="setSettings()">
+    </div>
+
+        <div class="sdpi-heading"></div>
+        <details class="message">
+            <summary>For setup instructions go to: <span class="linkspan" onclick="openWebsite()">https://www.krabs.me/streamdeck-plugins</span></summary>
+        </details>
+</div>
+
+<div class="sdpi-info-label hidden" style="top: -1000;" value="">Tooltip</div>
+</body>
+</html>

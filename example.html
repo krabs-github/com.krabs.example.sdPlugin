@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>com.krabs.example</title>
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        <script>
+            let websocket = null;
+            let pluginUUID = null;
+            let DestinationEnum = Object.freeze({ HARDWARE_AND_SOFTWARE: 0, HARDWARE_ONLY: 1, SOFTWARE_ONLY: 2 });
+            let exampleText; // define the setTitle function as 'exampleText'
+            let krabsExample = {
+                type: "com.krabs.example.action",
+                onKeyDown: function (context, settings, coordinates, userDesiredState) {
+                    /* Code here will run when the key is pressed https://developer.elgato.com/documentation/stream-deck/sdk/events-received/#keydown */
+                },
+                onKeyUp: function (context, settings, coordinates, userDesiredState) {
+                    /* Code here will run when the key is released https://developer.elgato.com/documentation/stream-deck/sdk/events-received/#keyup */
+
+                    // Set Title text on button
+                    var vExampleText = "You\npressed\nme"
+                    krabsExample.SetTitle(context, vExampleText);
+
+                    // Set an Image
+                    var imageUrl = "resources/images/pressed.png";
+                    var vText = ""
+                    convertImgToBase64(imageUrl, vText, function(base64Img){
+                    var vAvatarBase64 = base64Img;
+                    setImage(context, vAvatarBase64);
+
+                    // Set an Image and Canvas Text
+                    /*var imageUrl = "resources/images/actionDefaultImage.png";
+                    var vText = "Hello"
+                    convertImgToBase64(imageUrl, vText, function(base64Img){
+                    var vAvatarBase64 = base64Img;
+                    setImage(context, vAvatarBase64);*/
+
+                  });
+                  // Open modal window
+                  // window.open("https://www.krabs.me", "Krabs.Me Example", "height = 500, width = 350");
+
+                  // Open URL in browser
+                  //openWebsite(vWebsiteOpenInBrowser);
+                },
+                onWillAppear: function (context, settings, coordinates) {
+                    /* Code here will run when the Stream Deck application is opened, the user switches between profiles or when a user adds the action
+                        to their Stream Deck https://developer.elgato.com/documentation/stream-deck/sdk/events-received/#willappear
+                    */
+                    let json = { event: "setTitle", context: context, payload: { title: "Press Me", target: DestinationEnum.HARDWARE_AND_SOFTWARE } };
+                    websocket.send(JSON.stringify(json));
+                },
+                SetTitle: function (context, vExampleText) {
+                    let json = { event: "setTitle", context: context, payload: { title: vExampleText, target: DestinationEnum.HARDWARE_AND_SOFTWARE } };
+                    websocket.send(JSON.stringify(json));
+                },
+                SetSettings: function (context, settings) {
+                    let json = { event: "setSettings", context: context, payload: settings };
+                    websocket.send(JSON.stringify(json));
+                },
+            };
+
+            function convertImgToBase64(url, vText, callback, outputFormat){
+              var canvas = document.createElement('CANVAS');
+              var ctx = canvas.getContext('2d');
+              var img = new Image;
+              img.crossOrigin = 'Anonymous';
+              img.onload = function(){
+                  canvas.height = img.height;
+                  canvas.width = img.width;
+                    ctx.drawImage(img,0,0);
+                    // Text Font
+                    ctx.font = "12pt Calibri";
+                    // Text Color
+                    ctx.fillStyle = 'white';
+                    // text variable, width, height
+                    ctx.fillText(vText, 10, 20);
+                    
+                    // Draw a Triangle
+                    //ctx.fillStyle = 'rgba(0, 0, 200, 0.5)';
+                    //ctx.fillRect(30, 30, 20, 20);
+
+                    // Don't touch the code below
+                    var dataURL = canvas.toDataURL(outputFormat || 'image/png');
+                    callback.call(this, dataURL);
+                  // Clean up
+                    canvas = null;
+              };
+              img.src = url;
+            };
+
+            function setImage (context, vAvatarBase64) {
+              var json = {
+                  'event': 'setImage',
+                  'context': context,
+                  'payload': {
+                      'image': vAvatarBase64,
+                      'target': DestinationEnum.HARDWARE_AND_SOFTWARE
+                  }
+                };
+              websocket.send(JSON.stringify(json));
+            };
+
+            function openWebsite(vWebsiteOpenInBrowser) {
+                if (websocket && (websocket.readyState === 1)) {
+                    const json = {
+                        'event': 'openUrl',
+                        'payload': {
+                            'url': vWebsiteOpenInBrowser
+                        }
+                    };
+                    websocket.send(JSON.stringify(json));
+                }
+            };
+
+            function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, inInfo) {
+                pluginUUID = inPluginUUID;
+                websocket = new WebSocket("ws://127.0.0.1:" + inPort);
+                function registerPlugin(inPluginUUID) {
+                    let json = { event: inRegisterEvent, uuid: inPluginUUID };
+                    websocket.send(JSON.stringify(json));
+                }
+                websocket.onopen = function () {
+                    registerPlugin(pluginUUID);
+                };
+                websocket.onmessage = function (evt) {
+                    let jsonObj = JSON.parse(evt.data);
+                    let event = jsonObj["event"];
+                    let action = jsonObj["action"];
+                    let context = jsonObj["context"];
+                    if (event == "keyDown") {
+                        let jsonPayload = jsonObj["payload"];
+                        let settings = jsonPayload["settings"];
+                        let coordinates = jsonPayload["coordinates"];
+                        let userDesiredState = jsonPayload["userDesiredState"];
+                        krabsExample.onKeyDown(context, settings, coordinates, userDesiredState);
+                    } else if (event == "keyUp") {
+                        let jsonPayload = jsonObj["payload"];
+                        let settings = jsonPayload["settings"];
+                        let coordinates = jsonPayload["coordinates"];
+                        let userDesiredState = jsonPayload["userDesiredState"];
+                        krabsExample.onKeyUp(context, settings, coordinates, userDesiredState);
+                    } else if (event == "willAppear") {
+                        let jsonPayload = jsonObj["payload"];
+                        let settings = jsonPayload["settings"];
+                        let coordinates = jsonPayload["coordinates"];
+                        krabsExample.onWillAppear(context, settings, coordinates);
+                    }
+                };
+                websocket.onclose = function () {};
+            }
+        </script>
+    </body>
+</html>
